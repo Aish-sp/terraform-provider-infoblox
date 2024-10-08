@@ -94,6 +94,12 @@ func resourceIPAllocation() *schema.Resource {
 				Default:     1,
 				Description: "The number of IP addresses to allocate.",
 			},
+			"ipv6": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Default:     false,
+				Description: "Flag to indicate if the IP address is IPv6 or not.",
+			},
 			"ttl": {
 				Type:        schema.TypeInt,
 				Optional:    true,
@@ -181,6 +187,7 @@ func resourceAllocationRequest(d *schema.ResourceData, m interface{}) error {
 	ipv4Addr := d.Get("ipv4_addr").(string)
 	ipv6Addr := d.Get("ipv6_addr").(string)
 	nextAvailableFilter := d.Get("filter_params").(string)
+	isIpv6 := d.Get("ipv6").(bool)
 	num := d.Get("number_of_ip_allocations").(int)
 	if (ipv4Cidr == "" && ipv6Cidr == "" && ipv4Addr == "" && ipv6Addr == "") && nextAvailableFilter == "" {
 		return fmt.Errorf("allocation through host address record creation needs an IPv4/IPv6 address" +
@@ -235,7 +242,7 @@ func resourceAllocationRequest(d *schema.ResourceData, m interface{}) error {
 		if err != nil {
 			return fmt.Errorf("error unmarshalling extra attributes of network: %s", err)
 		}
-		newRecordHost, err = objMgr.AllocateNextAvailableIp(fqdn, "record:host", eaMap, nil, false, true, extAttrs, comment, false, &num)
+		newRecordHost, err = objMgr.AllocateNextAvailableIp(fqdn, "record:host", eaMap, nil, false, isIpv6, extAttrs, comment, false, &num)
 	} else {
 
 		// enableDns and enableDhcp flags used to create host record with respective flags.
@@ -396,6 +403,7 @@ func resourceAllocationUpdate(d *schema.ResourceData, m interface{}) (err error)
 			prevIPv4CIDR, _ := d.GetChange("ipv4_cidr")
 			prevIPv6CIDR, _ := d.GetChange("ipv6_cidr")
 			prevNextAvailableFilter, _ := d.GetChange("filter_params")
+			isIpv6, _ := d.GetChange("ipv6")
 			prevNum, _ := d.GetChange("number_of_ip_allocations")
 			prevEnableDNS, _ := d.GetChange("enable_dns")
 			prevTTL, _ := d.GetChange("ttl")
@@ -410,6 +418,7 @@ func resourceAllocationUpdate(d *schema.ResourceData, m interface{}) (err error)
 			_ = d.Set("ipv4_cidr", prevIPv4CIDR.(string))
 			_ = d.Set("ipv6_cidr", prevIPv6CIDR.(string))
 			_ = d.Set("filter_params", prevNextAvailableFilter.(string))
+			_ = d.Set("ipv6", isIpv6.(bool))
 			_ = d.Set("number_of_ip_allocations", prevNum.(int))
 			_ = d.Set("enable_dns", prevEnableDNS.(bool))
 			_ = d.Set("ttl", prevTTL.(int))
